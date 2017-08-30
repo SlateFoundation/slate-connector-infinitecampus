@@ -203,7 +203,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
 
     // task handlers
-    public static function pullStudents(Job $Job, $pretend = true, SpreadsheetReader $spreadsheet)
+    public static function pullStudents(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
         try {
@@ -278,7 +278,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $results;
     }
 
-    public static function pullAlumni(Job $Job, $pretend = true, SpreadsheetReader $spreadsheet)
+    public static function pullAlumni(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
         static::_requireColumns('alumni', $spreadsheet, static::getStackedConfig('alumniRequiredColumns'), static::getStackedConfig('alumniColumns'));
@@ -348,7 +348,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $results;
     }
 
-    public static function pullStaff(Job $Job, $pretend = true, SpreadsheetReader $spreadsheet)
+    public static function pullStaff(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
         static::_requireColumns('staff', $spreadsheet, static::getStackedConfig('staffRequiredColumns'), static::getStackedConfig('staffColumns'));
@@ -420,7 +420,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $results;
     }
 
-    public static function pullSections(Job $Job, $pretend = true, SpreadsheetReader $spreadsheet)
+    public static function pullSections(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
         static::_requireColumns('Sections', $spreadsheet, static::getStackedConfig('sectionRequiredColumns'), static::getStackedConfig('sectionColumns'));
@@ -624,7 +624,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $results;
     }
 
-    public static function pullEnrollments(Job $Job, $pretend = true, SpreadsheetReader $spreadsheet)
+    public static function pullEnrollments(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
         static::_requireColumns('Enrollments', $spreadsheet, static::getStackedConfig('enrollmentRequiredColumns'), static::getStackedConfig('enrollmentColumns'));
