@@ -23,12 +23,18 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     // AbstractConnector overrides
     public static $title = 'Infinite Campus';
     public static $connectorId = 'infinite-campus';
-    
+
     public static $studentColumns = [
         'Student Number' => 'StudentNumber',
         'Homeroom Teacher' => 'AdvisorFullName'
     ];
-    
+
+    public static $studentRequiredColumns = [
+        'Gender',
+        'Grade',
+        'AdvisorFullName'
+    ];
+
     public static $sectionColumns = [
         'Section ID' => 'SectionExternal',
         'Course Number' => 'CourseExternal',
