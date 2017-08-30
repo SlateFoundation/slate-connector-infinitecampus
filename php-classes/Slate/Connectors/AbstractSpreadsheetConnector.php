@@ -463,7 +463,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                     'rowNumber' => $results['analyzed'],
                     'reason' => $filterReason
                 ]);
-                return;
+                continue;
             }
 
 
@@ -471,13 +471,13 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             if (empty($row['CourseCode'])) {
                 $results['failed']['missing-required-field']['CourseCode']++;
                 $Job->error('Missing course code for row #{rowNumber}', ['rowNumber' => $results['analyzed']]);
-                return;
+                continue;
             }
 
             if (empty($row['SectionExternal']) && empty($row['SectionCode'])) {
                 $results['failed']['missing-required-field']['SectionCode']++;
                 $Job->error('Missing section code for row #{rowNumber}', ['rowNumber' => $results['analyzed']]);
-                return;
+                continue;
             }
 
             if (!$Record = static::_getSection($Job, $row, $MasterTerm)) {
@@ -528,7 +528,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 }
 
                 $Job->logException($e);
-                return;
+                continue;
             }
 
 
@@ -538,7 +538,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 $error = $Record->validationErrors[$firstErrorField];
                 $results['failed']['invalid'][$firstErrorField][is_array($error) ? http_build_query($error) : $error]++;
                 $Job->logInvalidRecord($Record);
-                return;
+                continue;
             }
 
 
