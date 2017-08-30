@@ -36,16 +36,29 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     ];
 
     public static $sectionColumns = [
-        'Section ID' => 'SectionExternal',
-        'Course Number' => 'CourseExternal',
+        'Course ID' => 'CourseExternal',
         'Course Name' => 'CourseTitle',
+        'Section ID' => 'SectionExternal',
         'Max Students' => 'StudentsCapacity',
-#        'Teacher Display' => 'TeacherFullName',
-        'Room Name' => 'Location'
+        'Teacher Display' => 'TeacherFullName[]',
+        'Teacher 2  Display' => 'TeacherFullName[]',
+        'Room Name' => 'Location',
+        'Terms' => 'TermQuarters',
+        'Term End' => 'TermLastQuarter',
+        'Band' => 'Schedule'
     ];
-    
-    public static $sectionRequiredColumns = [];
-    
+
+    public static $sectionRequiredColumns = [
+        'CourseCode' => false,
+        'CourseExternal',
+        'CourseTitle',
+        'SectionExternal',
+        'TermQuarters',
+        'TermLastQuarter',
+        'Schedule'
+    ];
+
+
     // workflow implementations
     protected static function _getJobConfig(array $requestData)
     {
