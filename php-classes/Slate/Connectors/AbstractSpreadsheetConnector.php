@@ -32,8 +32,6 @@ use Emergence\Locations\Location;
 
 class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreadsheetConnector
 {
-    use \Emergence\Classes\StackedConfigTrait;
-
     // ExternalKey values for mappings read into ForeignKey columns
     public static $personForeignKeyName = 'person[foreign_key]';
     public static $sectionForeignKeyName = 'section[foreign_key]';
