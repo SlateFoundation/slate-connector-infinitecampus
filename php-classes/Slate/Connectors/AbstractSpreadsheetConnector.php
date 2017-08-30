@@ -32,6 +32,8 @@ use Emergence\Locations\Location;
 
 class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreadsheetConnector
 {
+    use \Emergence\Classes\StackedConfigTrait;
+
     // ExternalKey values for mappings read into ForeignKey columns
     public static $personForeignKeyName = 'person[foreign_key]';
     public static $sectionForeignKeyName = 'section[foreign_key]';
@@ -1635,47 +1637,5 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         }
 
         return static::$_currentMasterTerm;
-    }
-    
-    protected static $_stackedConfigs = [];
-    protected static function _initStackedConfig($propertyName)
-    {
-        $className = get_called_class();
-
-        // merge fields from first ancestor up
-        $classes = class_parents($className);
-        array_unshift($classes, $className);
-
-        $config = array();
-        while ($class = array_pop($classes)) {
-            $classVars = get_class_vars($class);
-            if (!empty($classVars[$propertyName])) {
-                $config = array_merge($config, $classVars[$propertyName]);
-            }
-        }
-
-        // filter out falsey configs
-        $config = array_filter($config);
-
-        return $config;
-    }
-
-    public static function &getStackedConfig($propertyName, $key = null)
-    {
-        $className = get_called_class();
-
-        if (!isset(static::$_stackedConfigs[$className][$propertyName])) {
-            static::$_stackedConfigs[$className][$propertyName] = static::_initStackedConfig($propertyName);
-        }
-
-        if ($key) {
-            if (array_key_exists($key, static::$_stackedConfigs[$className][$propertyName])) {
-                return static::$_stackedConfigs[$className][$propertyName][$key];
-            } else {
-                return null;
-            }
-        } else {
-            return static::$_stackedConfigs[$className][$propertyName];
-        }
     }
 }
