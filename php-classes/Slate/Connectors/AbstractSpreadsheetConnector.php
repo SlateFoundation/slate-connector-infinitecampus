@@ -207,7 +207,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     {
         // check input
         try {
-            static::_requireColumns('students', $spreadsheet, static::$studentRequiredColumns, static::$studentColumns);
+            static::_requireColumns('students', $spreadsheet, static::getStackedConfig('studentRequiredColumns'), static::getStackedConfig('studentColumns'));
         } catch (Exception $e) {
             $Job->logException($e);
             return false;
@@ -802,6 +802,11 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
 
     // protected methods
+    protected static function initStudentRequiredColumns(array $config)
+    {
+        return static::initRequiredColumns($config);
+    }
+
     protected static function _readStudent($Job, array $row)
     {
         $row = static::_readRow($row, static::$studentColumns);
