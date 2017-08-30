@@ -481,29 +481,8 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             }
 
 
-            // try to get existing section by mapping
-            if (!empty($row['SectionExternal'])) {
-                $externalIdentifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
-
-                $Mapping = Mapping::getByWhere([
-                    'ContextClass' => Section::getStaticRootClass(),
-                    'Connector' => static::getConnectorId(),
-                    'ExternalKey' => static::$sectionForeignKeyName,
-                    'ExternalIdentifier' => $externalIdentifier
-                ]);
-
-                if ($Mapping) {
-                    $Record = $Mapping->Context;
-                }
-            }
-
-            // try to get existing section by code
-            if (!$Record && !empty($row['SectionCode'])) {
-                $Record = Section::getByCode($row['SectionCode']);
-            }
-
-            // create new section
-            if (!$Record) {
+            // get or create new section
+            if (!$Record = static::getSection($Job, $MasterTerm, $row)) {
                 $Record = Section::create();
 
                 if (!empty($row['SectionCode'])) {
@@ -1421,6 +1400,32 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 }
             ]
         ];
+    }
+
+    protected static function getSection(Job $Job, Term $MasterTerm, array $row)
+    {
+        // try to get existing section by mapping
+        if (!empty($row['SectionExternal'])) {
+            $externalIdentifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
+
+            $Mapping = Mapping::getByWhere([
+                'ContextClass' => Section::getStaticRootClass(),
+                'Connector' => static::getConnectorId(),
+                'ExternalKey' => static::$sectionForeignKeyName,
+                'ExternalIdentifier' => $externalIdentifier
+            ]);
+
+            if ($Mapping) {
+                return $Mapping->Context;
+            }
+        }
+
+        // try to get existing section by code
+        if (!empty($row['SectionCode'])) {
+            return Section::getByCode($row['SectionCode']);
+        }
+
+        return null;
     }
 
     protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row, array &$results)
