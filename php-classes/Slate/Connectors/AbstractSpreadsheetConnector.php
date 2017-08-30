@@ -35,7 +35,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     // ExternalKey values for mappings read into ForeignKey columns
     public static $personForeignKeyName = 'person[foreign_key]';
     public static $sectionForeignKeyName = 'section[foreign_key]';
-    public static $courseForeignKeyName = 'course[foreign_key]';
+
 
     // group assignments
     public static $studentsRootGroup = 'students';
@@ -480,8 +480,30 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 continue;
             }
 
-            if (!$Record = static::_getSection($Job, $row, $MasterTerm)) {
-                // create new section
+
+            // try to get existing section by mapping
+            if (!empty($row['SectionExternal'])) {
+                $externalIdentifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
+
+                $Mapping = Mapping::getByWhere([
+                    'ContextClass' => Section::getStaticRootClass(),
+                    'Connector' => static::getConnectorId(),
+                    'ExternalKey' => static::$sectionForeignKeyName,
+                    'ExternalIdentifier' => $externalIdentifier
+                ]);
+
+                if ($Mapping) {
+                    $Record = $Mapping->Context;
+                }
+            }
+
+            // try to get existing section by code
+            if (!$Record && !empty($row['SectionCode'])) {
+                $Record = Section::getByCode($row['SectionCode']);
+            }
+
+            // create new section
+            if (!$Record) {
                 $Record = Section::create();
 
                 if (!empty($row['SectionCode'])) {
@@ -491,30 +513,37 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
             // get teacher, but add later
             $Teacher = null;
-            if (!$Teacher = static::_getTeacher($Job, $row)) {
-                if (!empty($row['TeacherUsername'])) {
+            if (!empty($row['TeacherUsername'])) {
+                if (!$Teacher = User::getByUsername($row['TeacherUsername'])) {
                     $results['failed']['teacher-not-found-by-username'][$row['TeacherUsername']]++;
-                } elseif (isset($row['TeacherFullName']) || (isset($row['TeacherFirstName']) && isset($row['TeacherLastName']))) {
-                    if (isset($row['TeacherFullName'])) {
-                        $fullName = $row['TeacherFullName'];
-                    } else {
-                        $fullName = $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'];
-                    }
-                    $results['failed']['teacher-not-found-by-name'][$fullName]++;
+                    $Job->error('Teacher not found for username {username}', ['username' => $row['TeacherUsername']]);
+                    continue;
                 }
-                return;
+            } elseif (($teacherNameSplit = !empty($row['TeacherFirstName']) && !empty($row['TeacherLastName'])) || !empty($row['TeacherFullName'])) {
+                if ($teacherNameSplit) {
+                    $Teacher = User::getByFullName($row['TeacherFirstName'], $row['TeacherLastName']);
+                } else {
+                    $teacherName = User::parseFullName($row['TeacherFullName']);
+                    $Teacher = User::getByFullName($teacherName['FirstName'], $teacherName['LastName']);
+                }
+
+                if (!$Teacher) {
+                    $fullName = $teacherNameSplit ? $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'] : $row['TeacherFullName'];
+                    $results['failed']['teacher-not-found-by-name'][$fullName]++;
+                    $Job->error('Teacher not found for full name {name}', ['name' => $fullName]);
+                    continue;
+                }
             }
+
 
             // get or create course
-            if (!$Course = static::_getCourse($Job, $row)) {
-                $Course = Course::create([
+            if (!$Record->Course = Course::getByCode($row['CourseCode'])) {
+                $Record->Course = Course::create([
                     'Code' => $row['CourseCode'],
                     'Title' => $row['CourseTitle'] ?: $row['CourseCode'],
-                    'DepartmentTitle' => !empty($row['DepartmentTitle']) ? Department::getOrCreateByTitle($row['DepartmentTitle']) : null // _getDepartment?
-                ], !$pretend);
+                    'Department' => !empty($row['DepartmentTitle']) ? Department::getOrCreateByTitle($row['DepartmentTitle']) : null
+                ]);
             }
-
-            $Record->Course = $Course;
 
 
             // apply values from spreadsheet
@@ -583,7 +612,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
 
             // save mapping
-            if ($externalIdentifier = static::_getSectionExternalIdentifier($row, $MasterTerm) && !$Mapping = static::_getSectionMapping($externalIdentifier)) {
+            if (!$Mapping && $externalIdentifier) {
                 $Mapping = Mapping::create([
                     'Context' => $Record
                     ,'Source' => 'creation'
@@ -1394,159 +1423,25 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         ];
     }
 
-    protected static function _getCourse($Job, array $row)
+    protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row, array &$results)
     {
-        $Course = null;
-
-        if (($externalIdentifier = static::_getCourseExternalIdentifier($row)) && ($Mapping = static::_getCourseMapping($externalIdentifier))) {
-            return $Mapping->Context;
-        }
-
-        if (!empty($row['CourseCode'])) {
-            return Course::getByCode($row['CourseCode']);
-        }
-
-        return $Course;
-    }
-
-    protected static function _getCourseExternalIdentifier(array $row)
-    {
-        $identifier = null;
-
-        if (!empty($row['CourseExternal'])) {
-            $identifier = $row['CourseExternal'];
-        }
-
-        return $identifier;
-    }
-
-    protected static function _getCourseMapping($externalIdentifier)
-    {
-        return Mapping::getByWhere([
-            'ContextClass' => Course::getStaticRootClass(),
-            'Connector' => static::getConnectorId(),
-            'ExternalKey' => static::$courseForeignKeyName,
-            'ExternalIdentifier' => $externalIdentifier
-        ]);
-    }
-
-    protected static function _getTeacher(Job $Job, array $row)
-    {
-        $Teacher = null;
-
-        if (!empty($row['TeacherUsername'])) {
-            if (!$Teacher = User::getByUsername($row['TeacherUsername'])) {
-                $Job->error('Teacher not found for username {username}', ['username' => $row['TeacherUsername']]);
-            }
-        } elseif (($teacherNameSplit = !empty($row['TeacherFirstName']) && !empty($row['TeacherLastName'])) || !empty($row['TeacherFullName'])) {
-            if ($teacherNameSplit) {
-                $Teacher = User::getByFullName($row['TeacherFirstName'], $row['TeacherLastName']);
-            } else {
-                $teacherName = User::parseFullName($row['TeacherFullName']);
-                $Teacher = User::getByFullName($teacherName['FirstName'], $teacherName['LastName']);
-            }
-
-            if (!$Teacher) {
-                $fullName = $teacherNameSplit ? $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'] : $row['TeacherFullName'];
-                $Job->error('Teacher not found for full name {name}', ['name' => $fullName]);
-            }
-        } else {
-            $Job->warning('Teacher mapping column not found.', ['row' => $row]);
-        }
-
-        return $Teacher;
-    }
-
-    protected static function _getSection(Job $Job, array $row, Term $MasterTerm)
-    {
-        $Section = null;
-
-        // try to get existing section by mapping
-        if (($externalIdentifier = static::_getSectionExternalIdentifier($row, $MasterTerm)) && ($Mapping = static::_getSectionMapping($externalIdentifier))) {
-            return $Mapping->Context;
-        }
-
-        // try to get existing section by code
-        if (!empty($row['SectionCode'])) {
-            return Section::getByCode($row['SectionCode']);
-        }
-
-        return $Section;
-    }
-
-    protected static function _getSectionMapping($externalIdentifier)
-    {
-        return Mapping::getByWhere([
-            'ContextClass' => Section::getStaticRootClass(),
-            'Connector' => static::getConnectorId(),
-            'ExternalKey' => static::$sectionForeignKeyName,
-            'ExternalIdentifier' => $externalIdentifier
-        ]);
-    }
-
-    protected static function _getSectionExternalIdentifier(array $row, Term $MasterTerm)
-    {
-        $identifier = null;
-
-        if (!empty($row['SectionExternal'])) {
-            $identifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
-        }
-
-        return $identifier;
-    }
-
-    protected static function _getTerm(Job $Job, array $row)
-    {
-        $Term = null;
         if (!empty($row['Term'])) {
-            if (!$Term = Term::getByHandle($row['Term'])) {
-                $Job->logException(new RemoteRecordInvalid(
+            if (!$Section->Term = Term::getByHandle($row['Term'])) {
+                throw new RemoteRecordInvalid(
                     'term-not-found',
                     sprintf('Term not found for handle "%s"', $row['Term']),
                     $row,
                     $row['Term']
-                ));
+                );
             }
         }
 
-        return $Term;
-    }
-
-    protected static function _getSchedule(Job $Job, array $row)
-    {
-        $Schedule = null;
-
         if (!empty($row['Schedule'])) {
-            $Schedule = Schedule::getOrCreateByTitle($row['Schedule']);
-        }
-
-        return $Schedule;
-    }
-
-    protected static function _getLocation(Job $Job, array $row)
-    {
-        $Location = null;
-
-        if (!empty($row['Location'])) {
-            $Location = Location::getOrCreateByHandle('room-'.$row['Location'], 'Room '.$row['Location']);
-        }
-
-        return $Location;
-    }
-
-    protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row, array &$results)
-    {
-
-        if ($Term = static::_getTerm($Job, $row)) {
-            $Section->Term = $Term;
-        }
-
-        if (!empty($row['Schedule'])) {
-            $Section->Schedule = static::_getSchedule($Job, $row);
+            $Section->Schedule = Schedule::getOrCreateByTitle($row['Schedule']);
         }
 
         if (!empty($row['Location'])) {
-            $Section->Location = static::_getLocation($Job, $row);
+            $Section->Location = Location::getOrCreateByHandle('room-'.$row['Location'], 'Room '.$row['Location']);
         }
 
         if (!empty($row['StudentsCapacity'])) {
@@ -1576,13 +1471,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
 
         // check section term
-        if (!$Section->Term) {
-            throw new RemoteRecordInvalid(
-                'term-not-found',
-                sprintf('Section "%s" has no associated term.', $Section->Code ?: (string)$Section),
-                $row
-            );
-        } elseif ($Section->Term->Left < $MasterTerm->Left || $Section->Term->Left > $MasterTerm->Right) {
+        if ($Section->Term->Left < $MasterTerm->Left || $Record->Term->Left > $MasterTerm->Right) {
             throw new RemoteRecordInvalid(
                 'term-outside-master',
                 sprintf('Term "%s" is not within the selected master term', $row['Term']),
