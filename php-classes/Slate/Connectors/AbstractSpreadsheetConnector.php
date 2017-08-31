@@ -1448,7 +1448,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return null;
     }
 
-    protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row, array &$results)
+    protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row)
     {
         if (!empty($row['Term'])) {
             if (!$Section->Term = Term::getByHandle($row['Term'])) {
