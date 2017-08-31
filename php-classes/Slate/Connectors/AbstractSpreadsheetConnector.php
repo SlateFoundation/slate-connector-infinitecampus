@@ -829,7 +829,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function _readStudent($Job, array $row)
     {
-        $row = static::_readRow($row, static::$studentColumns);
+        $row = static::_readRow($row, static::getStackedConfig('studentColumns'));
 
         static::_fireEvent('readStudent', [
             'Job' => $Job,
@@ -841,7 +841,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function _readAlumni($Job, array $row)
     {
-        $row = static::_readRow($row, static::$alumniColumns);
+        $row = static::_readRow($row, static::getStackedConfig('alumniColumns'));
 
         static::_fireEvent('readAlumni', [
             'Job' => $Job,
@@ -853,7 +853,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function _readStaff($Job, array $row)
     {
-        $row = static::_readRow($row, static::$staffColumns);
+        $row = static::_readRow($row, static::getStackedConfig('staffColumns'));
 
         static::_fireEvent('readStaff', [
             'Job' => $Job,
@@ -865,7 +865,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function _readSection($Job, array $row)
     {
-        $row = static::_readRow($row, static::$sectionColumns);
+        $row = static::_readRow($row, static::getStackedConfig('sectionColumns'));
 
         static::_fireEvent('readSection', [
             'Job' => $Job,
@@ -877,7 +877,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function _readEnrollment($Job, array $row)
     {
-        $row = static::_readRow($row, static::$enrollmentColumns);
+        $row = static::_readRow($row, static::getStackedConfig('enrollmentColumns'));
 
         static::_fireEvent('readEnrollment', [
             'Job' => $Job,
