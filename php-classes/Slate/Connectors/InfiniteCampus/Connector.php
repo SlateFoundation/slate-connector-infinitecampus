@@ -62,6 +62,13 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         'Schedule'
     ];
 
+    public static $enrollmentColumns = [
+        // discard extra columns
+        'Course ID' => false,
+        'Section Number' => false,
+        'End Year' => false
+    ];
+
 
     // workflow implementations
     protected static function _getJobConfig(array $requestData)
@@ -70,7 +77,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
 
         $config['studentsCsv'] = !empty($_FILES['students']) && $_FILES['students']['error'] === UPLOAD_ERR_OK ? $_FILES['students']['tmp_name'] : null;
         $config['sectionsCsv'] = !empty($_FILES['sections']) && $_FILES['sections']['error'] === UPLOAD_ERR_OK ? $_FILES['sections']['tmp_name'] : null;
-        $config['schedulesCsv'] = !empty($_FILES['schedules']) && $_FILES['schedules']['error'] === UPLOAD_ERR_OK ? $_FILES['schedules']['tmp_name'] : null;
+        $config['enrollmentsCsv'] = !empty($_FILES['schedules']) && $_FILES['schedules']['error'] === UPLOAD_ERR_OK ? $_FILES['schedules']['tmp_name'] : null;
 
         return $config;
     }
