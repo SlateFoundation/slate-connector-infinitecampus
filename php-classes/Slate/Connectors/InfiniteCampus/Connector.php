@@ -75,6 +75,11 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     {
         $config = parent::_getJobConfig($requestData);
 
+        $config['updatePasswords'] = false;
+        $config['updateAbout'] = false;
+        $config['matchFullNames'] = false;
+        $config['autoAssignEmail'] = true;
+
         $config['studentsCsv'] = !empty($_FILES['students']) && $_FILES['students']['error'] === UPLOAD_ERR_OK ? $_FILES['students']['tmp_name'] : null;
         $config['sectionsCsv'] = !empty($_FILES['sections']) && $_FILES['sections']['error'] === UPLOAD_ERR_OK ? $_FILES['sections']['tmp_name'] : null;
         $config['enrollmentsCsv'] = !empty($_FILES['schedules']) && $_FILES['schedules']['error'] === UPLOAD_ERR_OK ? $_FILES['schedules']['tmp_name'] : null;
