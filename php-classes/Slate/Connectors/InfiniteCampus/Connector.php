@@ -20,7 +20,8 @@ use Slate\People\Student;
 
 class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implements \Emergence\Connectors\ISynchronize
 {
-    public static $fullNameMappings = [];
+    public static $personNameMappings = [];
+    public static $courseNameMappings = [];
     public static $teacherPlaceholders = ['TBD, Teacher', 'X Lunch', 'Y Lunch'];
 
     // AbstractConnector overrides
@@ -53,7 +54,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
 
     public static $sectionRequiredColumns = [
         'CourseCode' => false,
-        'CourseExternal',
+        //'CourseExternal',
         'CourseTitle',
         'SectionExternal',
         'TermQuarters',
@@ -184,8 +185,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
                 }
             }
 
-            if (!empty(static::$fullNameMappings[$fullName])) {
-                $fullName = static::$fullNameMappings[$fullName];
+            if (!empty(static::$personNameMappings[$fullName])) {
+                $fullName = static::$personNameMappings[$fullName];
             }
 
             $splitName = preg_split('/\s+/', $fullName);
@@ -233,10 +234,25 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $Term;
     }
 
-    protected static function _getCourse($Job, array $row)
+    protected static function getSectionCourse(Job $Job, Section $Section, array $row)
     {
-        if (!$Course = parent::_getCourse($Job, $row)) {
-            $Course = Course::getByField('Title', $row['CourseTitle']);
+        if (empty($row['CourseTitle'])) {
+            return null;
+        }
+
+        $courseTitle = $row['CourseTitle'];
+
+        if (!empty(static::$courseNameMappings[$courseTitle])) {
+            $courseTitle = static::$courseNameMappings[$courseTitle];
+        }
+
+        if (!$Course = Course::getByField('Title', $courseTitle)) {
+            throw new RemoteRecordInvalid(
+                'course-not-found',
+                'course not found for title: '.$courseTitle,
+                $row,
+                $courseTitle
+            );
         }
 
         return $Course;
