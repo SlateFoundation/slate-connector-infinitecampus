@@ -1421,9 +1421,9 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             if (!$Teacher = User::getByUsername($row['TeacherUsername'])) {
                 throw new RemoteRecordInvalid(
                     'teacher-not-found-by-username',
-                    'Teacher not found for username',
+                    'Teacher not found for username: '.$row['TeacherUsername'],
                     $row,
-                    $$row['TeacherUsername']
+                    $row['TeacherUsername']
                 );
             }
         } elseif (($teacherNameSplit = !empty($row['TeacherFirstName']) && !empty($row['TeacherLastName'])) || !empty($row['TeacherFullName'])) {
@@ -1438,7 +1438,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 $fullName = $teacherNameSplit ? $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'] : $row['TeacherFullName'];
                 throw new RemoteRecordInvalid(
                     'teacher-not-found-by-name',
-                    'Teacher not found for full name',
+                    'Teacher not found for full name: '.$fullName,
                     $row,
                     $fullName
                 );

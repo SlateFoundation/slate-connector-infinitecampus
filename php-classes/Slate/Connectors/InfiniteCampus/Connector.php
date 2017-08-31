@@ -20,6 +20,9 @@ use Slate\Term;
 
 class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implements \Emergence\Connectors\ISynchronize
 {
+    public static $fullNameMappings = [];
+    public static $teacherPlaceholders = ['TBD, Teacher', 'X Lunch', 'Y Lunch'];
+
     // AbstractConnector overrides
     public static $title = 'Infinite Campus';
     public static $connectorId = 'infinite-campus';
@@ -141,33 +144,67 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
 
         return $row;
     }
-    
-    protected static function _readSection($Job, array $row)
-    {
-        $row = static::_readRow($row, static::$sectionColumns);
-        
-        $teacherDisplay = (
-            isset($row['Teacher Display']) ?
-                $row['Teacher Display'] :
-                (
-                    isset($row['_rest']['Teacher Display']) ?
-                        $row['_rest']['Teacher Display'] :
-                        null
-                )
-        );
 
-        if ($teacherDisplay && preg_match("/^([a-z\-\']+),\s([a-z\-\']+)/i", $teacherDisplay, $matches)) {
-            $row['TeacherFullName'] = $matches[2] . ' ' . $matches[1];
+    protected static function getTeachers(Job $Job, array $row)
+    {
+        $teachers = [];
+
+        foreach ($row['TeacherFullName'] as $i => $fullName) {
+            if (in_array($fullName, static::$teacherPlaceholders)) {
+                continue;
+            }
+
+            if (count($split = explode('/', $fullName)) > 1) {
+                foreach ($split as $lastName) {
+                    $Teacher = User::getByWhere([
+                        'AccountLevel IN ("Teacher", "Administrator")',
+                        'LastName' => $lastName
+                    ]);
+
+                    if (!$Teacher) {
+                        throw new RemoteRecordInvalid(
+                            'teacher-not-found-by-last',
+                            'Teacher not found for last name: '.$lastName,
+                            $row,
+                            $lastName
+                        );
+                    }
+
+                    $teachers[] = $Teacher;
+                }
+
+                continue;
+            }
+
+            if (count($split = explode(',', $fullName)) == 2) {
+                if ($i == 0) {
+                    $fullName = trim($split[1]) . ' ' . trim($split[0]);
+                } else {
+                    $fullName = trim($split[0]);
+                }
+            }
+
+            if (!empty(static::$fullNameMappings[$fullName])) {
+                $fullName = static::$fullNameMappings[$fullName];
+            }
+
+            $splitName = preg_split('/\s+/', $fullName);
+            $firstName = array_shift($splitName);
+            $lastName = array_pop($splitName);
+
+            if (!$teachers[] = User::getByFullName($firstName, $lastName)) {
+                throw new RemoteRecordInvalid(
+                    'teacher-not-found-by-name',
+                    'Teacher not found for full name: '.$fullName,
+                    $row,
+                    $fullName
+                );
+            }
         }
 
-        static::_fireEvent('readSection', [
-            'Job' => $Job,
-            'row' => &$row
-        ]);
-
-        return $row;
+        return $Teacher ? [$Teacher] : [];
     }
-    
+
     protected static function _getTerm(Job $Job, array $row)
     {
         if (isset($row['Terms']) || isset($row['_rest']['Terms'])) {
@@ -191,7 +228,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         }
         return null;
     }
-    
+
     protected static function _getCourse($Job, array $row)
     {
         if (!$Course = parent::_getCourse($Job, $row)) {
