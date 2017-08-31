@@ -482,20 +482,6 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             }
 
 
-            // check required fields
-            if (empty($row['CourseCode'])) {
-                $results['failed']['missing-required-field']['CourseCode']++;
-                $Job->error('Missing course code for row #{rowNumber}', ['rowNumber' => $results['analyzed']]);
-                continue;
-            }
-
-            if (empty($row['SectionExternal']) && empty($row['SectionCode'])) {
-                $results['failed']['missing-required-field']['SectionCode']++;
-                $Job->error('Missing section code for row #{rowNumber}', ['rowNumber' => $results['analyzed']]);
-                continue;
-            }
-
-
             // get or create new section
             if (!$Record = static::getSection($Job, $MasterTerm, $row)) {
                 $Record = Section::create();
