@@ -492,28 +492,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             }
 
             // get teacher, but add later
-            $Teacher = null;
-            if (!empty($row['TeacherUsername'])) {
-                if (!$Teacher = User::getByUsername($row['TeacherUsername'])) {
-                    $results['failed']['teacher-not-found-by-username'][$row['TeacherUsername']]++;
-                    $Job->error('Teacher not found for username {username}', ['username' => $row['TeacherUsername']]);
-                    continue;
-                }
-            } elseif (($teacherNameSplit = !empty($row['TeacherFirstName']) && !empty($row['TeacherLastName'])) || !empty($row['TeacherFullName'])) {
-                if ($teacherNameSplit) {
-                    $Teacher = User::getByFullName($row['TeacherFirstName'], $row['TeacherLastName']);
-                } else {
-                    $teacherName = User::parseFullName($row['TeacherFullName']);
-                    $Teacher = User::getByFullName($teacherName['FirstName'], $teacherName['LastName']);
-                }
-
-                if (!$Teacher) {
-                    $fullName = $teacherNameSplit ? $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'] : $row['TeacherFullName'];
-                    $results['failed']['teacher-not-found-by-name'][$fullName]++;
-                    $Job->error('Teacher not found for full name {name}', ['name' => $fullName]);
-                    continue;
-                }
-            }
+            $teachers = static::getTeachers($Job, $row);
 
 
             // get or create course
@@ -609,7 +588,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
 
             // add teacher
-            if ($Teacher) {
+            foreach ($teachers AS $Teacher) {
                 $Participant = static::_getOrCreateParticipant($Record, $Teacher, 'Teacher', $pretend);
                 $logEntry = static::_logParticipant($Job, $Participant);
 
@@ -1432,6 +1411,41 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         }
 
         return null;
+    }
+
+    protected static function getTeachers(Job $Job, array $row)
+    {
+        $Teacher = null;
+
+        if (!empty($row['TeacherUsername'])) {
+            if (!$Teacher = User::getByUsername($row['TeacherUsername'])) {
+                throw new RemoteRecordInvalid(
+                    'teacher-not-found-by-username',
+                    'Teacher not found for username',
+                    $row,
+                    $$row['TeacherUsername']
+                );
+            }
+        } elseif (($teacherNameSplit = !empty($row['TeacherFirstName']) && !empty($row['TeacherLastName'])) || !empty($row['TeacherFullName'])) {
+            if ($teacherNameSplit) {
+                $Teacher = User::getByFullName($row['TeacherFirstName'], $row['TeacherLastName']);
+            } else {
+                $teacherName = User::parseFullName($row['TeacherFullName']);
+                $Teacher = User::getByFullName($teacherName['FirstName'], $teacherName['LastName']);
+            }
+
+            if (!$Teacher) {
+                $fullName = $teacherNameSplit ? $row['TeacherFirstName'] . ' ' . $row['TeacherLastName'] : $row['TeacherFullName'];
+                throw new RemoteRecordInvalid(
+                    'teacher-not-found-by-name',
+                    'Teacher not found for full name',
+                    $row,
+                    $fullName
+                );
+            }
+        }
+
+        return $Teacher ? [$Teacher] : [];
     }
 
     protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row)
