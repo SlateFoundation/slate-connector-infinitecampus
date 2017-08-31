@@ -459,8 +459,6 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
         // loop through rows
         while ($row = $spreadsheet->getNextRow()) {
-            $Record = null;
-            $Mapping = null;
 
             // process input row through column mapping
             $row = static::_readSection($Job, $row);
@@ -482,8 +480,33 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             }
 
 
+            // try to get existing section by mapping
+            $Record = null;
+            $Mapping = null;
+            $externalIdentifier = null;
+
+            if (!empty($row['SectionExternal'])) {
+                $externalIdentifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
+
+                $Mapping = Mapping::getByWhere([
+                    'ContextClass' => Section::getStaticRootClass(),
+                    'Connector' => static::getConnectorId(),
+                    'ExternalKey' => static::$sectionForeignKeyName,
+                    'ExternalIdentifier' => $externalIdentifier
+                ]);
+
+                if ($Mapping) {
+                    $Record = $Mapping->Context;
+                }
+            }
+
+
             // get or create new section
-            if (!$Record = static::getSection($Job, $MasterTerm, $row)) {
+            if (!$Record) {
+                $Record = static::getSection($Job, $MasterTerm, $row);
+            }
+
+            if (!$Record) {
                 $Record = Section::create();
 
                 if (!empty($row['SectionCode'])) {
@@ -542,7 +565,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 $Job->logRecordDelta($Record->Course->Department);
             }
 
-             if ($Record->Term) {
+            if ($Record->Term) {
                 $Job->logRecordDelta($Record->Term);
             }
 
@@ -1380,22 +1403,6 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
 
     protected static function getSection(Job $Job, Term $MasterTerm, array $row)
     {
-        // try to get existing section by mapping
-        if (!empty($row['SectionExternal'])) {
-            $externalIdentifier = sprintf('%s:%s', $MasterTerm->Handle, $row['SectionExternal']);
-
-            $Mapping = Mapping::getByWhere([
-                'ContextClass' => Section::getStaticRootClass(),
-                'Connector' => static::getConnectorId(),
-                'ExternalKey' => static::$sectionForeignKeyName,
-                'ExternalIdentifier' => $externalIdentifier
-            ]);
-
-            if ($Mapping) {
-                return $Mapping->Context;
-            }
-        }
-
         // try to get existing section by code
         if (!empty($row['SectionCode'])) {
             return Section::getByCode($row['SectionCode']);
