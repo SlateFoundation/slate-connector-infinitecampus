@@ -1448,17 +1448,28 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $Teacher ? [$Teacher] : [];
     }
 
+    protected static function getSectionTerm(Job $Job, Term $MasterTerm, Section $Section, array $row)
+    {
+        if (empty($row['Term'])) {
+            return null;
+        }
+
+        if (!$Term = Term::getByHandle($row['Term'])) {
+            throw new RemoteRecordInvalid(
+                'term-not-found',
+                sprintf('Term not found for handle "%s"', $row['Term']),
+                $row,
+                $row['Term']
+            );
+        }
+
+        return $Term;
+    }
+
     protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row)
     {
-        if (!empty($row['Term'])) {
-            if (!$Section->Term = Term::getByHandle($row['Term'])) {
-                throw new RemoteRecordInvalid(
-                    'term-not-found',
-                    sprintf('Term not found for handle "%s"', $row['Term']),
-                    $row,
-                    $row['Term']
-                );
-            }
+        if ($Term = static::getSectionTerm($Job, $MasterTerm, $Section, $row)) {
+            $Section->Term = $Term;
         }
 
         if (!empty($row['Schedule'])) {

@@ -12,10 +12,10 @@ use Emergence\People\User;
 
 use Psr\Log\LogLevel;
 
+use Slate\Term;
 use Slate\Courses\Course;
 use Slate\Courses\Section;
 use Slate\People\Student;
-use Slate\Term;
 
 
 class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implements \Emergence\Connectors\ISynchronize
@@ -205,28 +205,32 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $Teacher ? [$Teacher] : [];
     }
 
-    protected static function _getTerm(Job $Job, array $row)
+    protected static function getSectionTerm(Job $Job, Term $MasterTerm, Section $Section, array $row)
     {
-        if (isset($row['Terms']) || isset($row['_rest']['Terms'])) {
-            if (!$Term = Term::getClosest()) {
-                return null;
-            }
+        $year = substr($MasterTerm->StartDate, 0, 4);
 
-            $closestTermYear = (int)substr($Term->getMaster()->StartDate, 0, 4);
-            $termEnd = $row['Term End'] ?: $row['_rest']['Term End'];
-            $termLength = $row['Terms'] ?: $row['_rest']['Terms'];
-
-            if ((int)$termLength === 1) { // handle quarter term
-                $termHandle = sprintf('q%u-%u', $closestTermYear, $termEnd);
-            } elseif ((int)$termLength === 2) { // handle semester term
-                $termHandle = sprintf('s%u-%u', $closestTermYear, $termEnd % 2 === 0 ? $termEnd / 2 : null);
-            } elseif ((int)$termLength === 4) { // handle year long term
-                $termHandle = 'y'.$closestTermYear;
-            }
-
-            return Term::getByHandle($termHandle);
+        switch ($row['TermQuarters']) {
+            case 4:
+                $termHandle = 'y' . $year;
+                break;
+            case 2:
+                $termHandle = 's' . $year . '-' . $row['TermLastQuarter']/2;
+                break;
+            case 1:
+                $termHandle = 'q' . $year . '-' . $row['TermLastQuarter'];
+                break;
         }
-        return null;
+
+        if (!$Term = Term::getByHandle($termHandle)) {
+            throw new RemoteRecordInvalid(
+                'term-not-found',
+                'Term not found for handle: '.$termHandle,
+                $row,
+                $termHandle
+            );
+        }
+
+        return $Term;
     }
 
     protected static function _getCourse($Job, array $row)
