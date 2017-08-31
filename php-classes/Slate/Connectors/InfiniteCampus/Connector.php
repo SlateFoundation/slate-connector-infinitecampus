@@ -145,7 +145,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $row;
     }
 
-    protected static function getTeachers(Job $Job, array $row)
+    protected static function getSectionTeachers(Job $Job, Section $Section, array $row)
     {
         $teachers = [];
 

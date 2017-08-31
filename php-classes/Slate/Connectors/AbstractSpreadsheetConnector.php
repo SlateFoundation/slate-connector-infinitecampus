@@ -492,7 +492,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
             }
 
             // get teacher, but add later
-            $teachers = static::getTeachers($Job, $row);
+            $teachers = static::getSectionTeachers($Job, $Record, $row);
 
 
             // get or create course
@@ -1413,7 +1413,7 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return null;
     }
 
-    protected static function getTeachers(Job $Job, array $row)
+    protected static function getSectionTeachers(Job $Job, Section $Section, array $row)
     {
         $Teacher = null;
 
