@@ -491,18 +491,9 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
                 }
             }
 
+
             // get teacher, but add later
             $teachers = static::getSectionTeachers($Job, $Record, $row);
-
-
-            // get or create course
-            if (!$Record->Course = Course::getByCode($row['CourseCode'])) {
-                $Record->Course = Course::create([
-                    'Code' => $row['CourseCode'],
-                    'Title' => $row['CourseTitle'] ?: $row['CourseCode'],
-                    'Department' => !empty($row['DepartmentTitle']) ? Department::getOrCreateByTitle($row['DepartmentTitle']) : null
-                ]);
-            }
 
 
             // apply values from spreadsheet
@@ -1466,8 +1457,29 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
         return $Term;
     }
 
+    protected static function getSectionCourse(Job $Job, Section $Section, array $row)
+    {
+        if (empty($row['CourseCode'])) {
+            return null;
+        }
+
+        if (!$Course = Course::getByCode($row['CourseCode'])) {
+            $Course = Course::create([
+                'Code' => $row['CourseCode'],
+                'Title' => $row['CourseTitle'] ?: $row['CourseCode'],
+                'Department' => !empty($row['DepartmentTitle']) ? Department::getOrCreateByTitle($row['DepartmentTitle']) : null
+            ]);
+        }
+
+        return $Course;
+    }
+
     protected static function _applySectionChanges(Job $Job, Term $MasterTerm, Section $Section, array $row)
     {
+        if ($Course = static::getSectionCourse($Job, $Section, $row)) {
+            $Section->Course = $Course;
+        }
+
         if ($Term = static::getSectionTerm($Job, $MasterTerm, $Section, $row)) {
             $Section->Term = $Term;
         }
