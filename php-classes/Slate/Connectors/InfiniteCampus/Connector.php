@@ -203,7 +203,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
             }
         }
 
-        return $Teacher ? [$Teacher] : [];
+        return $teachers;
     }
 
     protected static function getSectionTerm(Job $Job, Term $MasterTerm, Section $Section, array $row)
