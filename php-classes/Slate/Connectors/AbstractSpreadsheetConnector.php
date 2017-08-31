@@ -281,7 +281,12 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     public static function pullAlumni(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
-        static::_requireColumns('alumni', $spreadsheet, static::getStackedConfig('alumniRequiredColumns'), static::getStackedConfig('alumniColumns'));
+        try {
+            static::_requireColumns('alumni', $spreadsheet, static::getStackedConfig('alumniRequiredColumns'), static::getStackedConfig('alumniColumns'));
+        } catch (Exception $e) {
+            $Job->logException($e);
+            return false;
+        }
 
         // initialize results
         $results = [
@@ -351,7 +356,12 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     public static function pullStaff(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
-        static::_requireColumns('staff', $spreadsheet, static::getStackedConfig('staffRequiredColumns'), static::getStackedConfig('staffColumns'));
+        try {
+            static::_requireColumns('staff', $spreadsheet, static::getStackedConfig('staffRequiredColumns'), static::getStackedConfig('staffColumns'));
+        } catch (Exception $e) {
+            $Job->logException($e);
+            return false;
+        }
 
         // initialize results
         $results = [
@@ -423,7 +433,12 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     public static function pullSections(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
-        static::_requireColumns('Sections', $spreadsheet, static::getStackedConfig('sectionRequiredColumns'), static::getStackedConfig('sectionColumns'));
+        try {
+            static::_requireColumns('Sections', $spreadsheet, static::getStackedConfig('sectionRequiredColumns'), static::getStackedConfig('sectionColumns'));
+        } catch (Exception $e) {
+            $Job->logException($e);
+            return false;
+        }
 
         if (empty($Job->Config['masterTerm'])) {
             $Job->logException(new Exception('masterTerm required to import sections'));
@@ -627,7 +642,12 @@ class AbstractSpreadsheetConnector extends \Emergence\Connectors\AbstractSpreads
     public static function pullEnrollments(Job $Job, SpreadsheetReader $spreadsheet, $pretend = true)
     {
         // check input
-        static::_requireColumns('Enrollments', $spreadsheet, static::getStackedConfig('enrollmentRequiredColumns'), static::getStackedConfig('enrollmentColumns'));
+        try {
+            static::_requireColumns('Enrollments', $spreadsheet, static::getStackedConfig('enrollmentRequiredColumns'), static::getStackedConfig('enrollmentColumns'));
+        } catch (Exception $e) {
+            $Job->logException($e);
+            return false;
+        }
 
         if (empty($Job->Config['masterTerm'])) {
             $Job->logException(new Exception('masterTerm required to import enrollments'));
