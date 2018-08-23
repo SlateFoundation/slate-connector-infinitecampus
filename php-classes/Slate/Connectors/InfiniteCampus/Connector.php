@@ -28,6 +28,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     public static $title = 'Infinite Campus';
     public static $connectorId = 'infinite-campus';
 
+    public static $studentsGraduationYearGroups = false;
+
     public static $studentColumns = [
         'Student Number' => 'StudentNumber',
         'Homeroom Teacher' => 'AdvisorFullName'
