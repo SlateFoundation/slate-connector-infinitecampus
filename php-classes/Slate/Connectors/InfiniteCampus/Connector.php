@@ -5,7 +5,6 @@ namespace Slate\Connectors\InfiniteCampus;
 use Exception;
 use SpreadsheetReader;
 
-use Emergence\Connectors\Job;
 use Emergence\Connectors\Mapping;
 use Emergence\Connectors\Exceptions\RemoteRecordInvalid;
 use Emergence\People\User;
@@ -16,6 +15,7 @@ use Slate\Term;
 use Slate\Courses\Course;
 use Slate\Courses\Section;
 use Slate\People\Student;
+use Emergence\Connectors\IJob;
 
 
 class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implements \Emergence\Connectors\ISynchronize
@@ -89,7 +89,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $config;
     }
 
-    public static function synchronize(Job $Job, $pretend = true)
+    public static function synchronize(IJob $Job, $pretend = true)
     {
         if ($Job->Status != 'Pending' && $Job->Status != 'Completed') {
             return static::throwError('Cannot execute job, status is not Pending or Complete');
@@ -143,7 +143,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return true;
     }
 
-    protected static function _readStudent($Job, array $row)
+    protected static function _readStudent(IJob $Job, array $row)
     {
         $row = static::_readRow($row, static::getStackedConfig('studentColumns'));
 
@@ -160,7 +160,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $row;
     }
 
-    protected static function getSectionTeachers(Job $Job, Section $Section, array $row)
+    protected static function getSectionTeachers(IJob $Job, Section $Section, array $row)
     {
         $teachers = [];
 
@@ -220,7 +220,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $teachers;
     }
 
-    protected static function getSectionTerm(Job $Job, Term $MasterTerm, Section $Section, array $row)
+    protected static function getSectionTerm(IJob $Job, Term $MasterTerm, Section $Section, array $row)
     {
         $year = substr($MasterTerm->StartDate, 0, 4);
 
@@ -248,7 +248,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         return $Term;
     }
 
-    protected static function getSectionCourse(Job $Job, Section $Section, array $row)
+    protected static function getSectionCourse(IJob $Job, Section $Section, array $row)
     {
         if (empty($row['CourseTitle'])) {
             return null;
