@@ -23,6 +23,7 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     public static $personNameMappings = [];
     public static $courseNameMappings = [];
     public static $teacherPlaceholders = ['TBD, Teacher', 'X Lunch', 'Y Lunch'];
+    public static $endOfYearUnenrollmentThreshold = 14; // days from end of school year in which an unenrollment will be ignored
 
     // AbstractConnector overrides
     public static $title = 'Infinite Campus';
@@ -68,7 +69,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         // discard extra columns
         'Course ID' => false,
         'Section Number' => false,
-        'End Year' => false
+        'End Year' => false,
+        'End Date' => 'EndDate'
     ];
 
 
@@ -270,5 +272,23 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         }
 
         return $Course;
+    }
+
+    protected static function _readEnrollment(IJob $Job, array $row)
+    {
+        $row = parent::_readEnrollment($Job, $row);
+
+
+        if (!empty($row['EndDate'])) {
+            $enrollmentEndDate = strtotime($row['EndDate']);
+            $termEndDate = strtotime($Job->getMasterTerm()->EndDate);
+            $daysFromGraduation = abs(($termEndDate - $enrollmentEndDate) / 60 / 60 / 24);
+
+            if (static::$endOfYearUnenrollmentThreshold && $daysFromGraduation < static::$endOfYearUnenrollmentThreshold) {
+                $row['EndDate'] = '';
+            }
+        }
+
+        return $row;
     }
 }
