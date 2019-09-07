@@ -52,7 +52,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         'Room Name' => 'Location',
         'Terms' => 'TermQuarters',
         'Term End' => 'TermLastQuarter',
-        'Band' => 'Schedule'
+        'Band' => 'Schedule',
+        'Section Template Group' => 'Schedule'
     ];
 
     public static $sectionRequiredColumns = [
