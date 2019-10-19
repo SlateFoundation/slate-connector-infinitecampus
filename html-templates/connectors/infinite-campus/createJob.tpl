@@ -87,6 +87,12 @@
             </p>
             <p>
                 <label>
+                    Auto Create Courses
+                    <input type="checkbox" name="autoCreateCourse" value="true" {refill field=autoCreateCourses checked="true"}>
+                </label>
+            </p>
+            <p>
+                <label>
                     Schedules CSV
                     <input type="file" name="schedules">
                 </label>
