@@ -89,6 +89,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         $config['sectionsCsv'] = !empty($_FILES['sections']) && $_FILES['sections']['error'] === UPLOAD_ERR_OK ? $_FILES['sections']['tmp_name'] : null;
         $config['enrollmentsCsv'] = !empty($_FILES['schedules']) && $_FILES['schedules']['error'] === UPLOAD_ERR_OK ? $_FILES['schedules']['tmp_name'] : null;
 
+        $config['autoCreateCourse'] = !empty($requestData['autoCreateCourse']);
+
         return $config;
     }
 
@@ -253,17 +255,22 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
 
     protected static function getSectionCourse(IJob $Job, Section $Section, array $row)
     {
-        if (empty($row['CourseTitle'])) {
-            return null;
-        }
-
         $courseTitle = $row['CourseTitle'];
-
         if (!empty(static::$courseNameMappings[$courseTitle])) {
             $courseTitle = static::$courseNameMappings[$courseTitle];
         }
 
-        if (!$Course = Course::getByField('Title', $courseTitle)) {
+        if ($Course = Course::getByCode($row['CourseCode'])) {
+            return $Course;
+        } else if ($Course = Course::getByField('Title', $courseTitle)) {
+            return $Course;
+        } else if (!empty($Job->Config['autoCreateCourse'])) {
+            return Course::create([
+                'Code' => $row['CourseCode'],
+                'Title' => $courseTitle ?: $row['CourseCode'],
+                'Department' => !empty($row['DepartmentTitle']) ? Department::getOrCreateByTitle($row['DepartmentTitle']) : null
+            ]);
+        } else {
             throw new RemoteRecordInvalid(
                 'course-not-found',
                 'course not found for title: '.$courseTitle,
@@ -272,7 +279,6 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
             );
         }
 
-        return $Course;
     }
 
     protected static function _readEnrollment(IJob $Job, array $row)
