@@ -153,9 +153,16 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
     {
         $row = static::_readRow($row, static::getStackedConfig('studentColumns'));
 
-        if (isset($row['AdvisorFullName']) && preg_match("/([a-z\-\']+),\s([a-z\-\']+)/i", $row['AdvisorFullName'], $matches)) {
-            $row['AdvisorLastName'] = $matches[1];
-            $row['AdvisorFirstName'] = $matches[2];
+        if (isset($row['AdvisorFullName'])) {
+
+            if (!empty(static::$personNameMappings[$row['AdvisorFullName']])) {
+                $row['AdvisorFullName'] = static::$personNameMappings[$row['AdvisorFullName']];
+            }
+
+            if (preg_match("/([a-z\-\']+),\s([a-z\-\']+)/i", $row['AdvisorFullName'], $matches)) {
+                $row['AdvisorLastName'] = $matches[1];
+                $row['AdvisorFirstName'] = $matches[2];
+            }
         }
 
         static::_fireEvent('readStudent', [
