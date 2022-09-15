@@ -54,7 +54,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         'Terms' => 'TermQuarters',
         'Term End' => 'TermLastQuarter',
         'Band' => 'Schedule',
-        'Section Template Group' => 'Schedule'
+        'Section Template Group' => 'Schedule',
+        'Department Name' => 'DepartmentTitle'
     ];
 
     public static $sectionRequiredColumns = [
@@ -72,6 +73,8 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
         'Course ID' => false,
         'Section Number' => false,
         'End Year' => false,
+        'First Name' => false,
+        'Last Name' => false,
         'End Date' => 'EndDate'
     ];
 
