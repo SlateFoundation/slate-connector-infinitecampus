@@ -182,6 +182,10 @@ class Connector extends \Slate\Connectors\AbstractSpreadsheetConnector implement
                 continue;
             }
 
+            if (!empty(static::$personNameMappings[$fullName])) {
+                $fullName = static::$personNameMappings[$fullName];
+            }
+
             if (count($split = explode('/', $fullName)) > 1) {
                 foreach ($split as $lastName) {
                     $Teacher = User::getByWhere([
